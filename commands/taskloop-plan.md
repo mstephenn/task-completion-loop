@@ -27,7 +27,9 @@ Parse `"$ARGUMENTS"` before Step 1.
   file, `Read` it in full as the spec text; otherwise treat the argument
   text itself as the goal description.
 - `source=<docs|jira|asana|monday|linear>` — which task-source adapter to
-  use, same meaning as `/taskloop`. Defaults to `docs` if omitted.
+  use, same meaning as `/taskloop`. If omitted, resolved automatically per
+  Appendix C of `commands/taskloop.md`; falls back to `docs` if nothing
+  else resolves it.
 - **No positional argument at all** (nothing left in `$ARGUMENTS` after
   removing any `source=` token): do not guess or invent a goal. Stop and
   ask the user: "What should I plan tasks for? Give me a description of
@@ -36,12 +38,16 @@ Parse `"$ARGUMENTS"` before Step 1.
 
 ## Step 1 — Resolve the Task-Source Adapter
 
-Read `source=` from `$ARGUMENTS` (default `docs`). For a non-`docs`
-source, confirm its required environment variables (Appendix B of
-`commands/taskloop.md`) are all set. If any are missing: **stop** and
-report exactly which variable is missing — same pattern as `/taskloop`'s
-own Step 0. (This command has no VCS adapter step — it never touches
-git remotes, branches, or PRs.)
+Resolve `<source>` per Appendix C of `commands/taskloop.md` (reads
+`source=` from `$ARGUMENTS` first; if omitted, checks
+`.taskloop/config.json`, then whether `docs/planning/` is already
+established, then scans README/AGENTS.md/CLAUDE.md, asking only if none
+of those resolve it). Appendix C also validates required env vars for
+non-`docs` sources and persists the resolution to `.taskloop/config.json`
+so a choice made here is remembered by `/taskloop` too. If a required
+variable is missing: **stop** and report exactly which variable is
+missing — same pattern as `/taskloop`'s own Step 0. (This command has no
+VCS adapter step — it never touches git remotes, branches, or PRs.)
 
 ## Step 2 — Resolve the Input
 
