@@ -96,7 +96,7 @@ Print the remaining candidates (after Step 5's dedup) as:
 ```
 
 one row per candidate. For the `docs` adapter, `<task-id>` is the real id
-this command will assign, computed from Step 7/8's placement rules
+this command will assign, computed from Step 8's placement rules
 (Appendix B's `docs` row), so it can be shown now. For `jira`/`asana`/
 `monday`/`linear`, no id exists yet at this point — no ticket has been
 created, and the tracker assigns the id only when Step 8 actually creates
