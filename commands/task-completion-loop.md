@@ -33,20 +33,54 @@ the final report; they are never implemented or checked off by this loop.
   not check the box and do not skip ahead — unless that task ID was passed
   in `skip=`, in which case move to the next candidate instead.
 
-## Step 0 — Resolve Repo Context
+## Step 0 — Resolve Repo Context and VCS Provider
 
-Derive everything about the target repo from the environment; never hardcode
-org/project/repo names.
+Derive everything about the target repo and its hosting provider from the
+environment; never hardcode an org/project/repo name or assume one
+provider.
 
-1. `git remote -v` — parse the URL. For an Azure DevOps SSH remote
-   (`git@ssh.dev.azure.com:v3/{ORG}/{PROJECT}/{REPO}` or the
-   `azure-optisol:v3/{ORG}/{PROJECT}/{REPO}` alias form), `{ORG}`,
-   `{PROJECT}`, `{REPO}` are exactly those path segments — case-sensitive,
-   do not normalize them.
-2. Do **not** trust `az devops configure -l`'s saved defaults — they can
-   silently point at the wrong org. Always pass `--organization` and
-   `--project` explicitly on every `az repos` call in this loop.
-3. Determine the default branch (`main` or `master`) via
+1. Run `git remote get-url origin` and match the host in the URL against
+   the table below to pick `<provider>`. Do this once per loop run and
+   reuse the result — do not re-detect per task.
+
+   | Host pattern in remote URL | `<provider>` | CLI |
+   |---|---|---|
+   | `github.com` | `github` | `gh` |
+   | `dev.azure.com`, `ssh.dev.azure.com`, `visualstudio.com`, or an alias resolving to one of these (check `git config --get remote.origin.url` and any `url.<base>.insteadOf` rewrites in `.gitconfig`) | `azuredevops` | `az` (with the `azure-devops` extension) |
+   | `gitlab.com` or a self-hosted GitLab (verify with `glab repo view` succeeding) | `gitlab` | `glab` |
+   | anything else | unrecognized | none |
+
+   If unrecognized: **stop the loop** before Step 1 and report the remote
+   URL to the user — ask which CLI/workflow to use rather than guessing.
+
+2. Confirm the CLI is installed and authenticated before doing any work:
+   - `github`: `gh auth status`
+   - `azuredevops`: `az extension show --name azure-devops` (run
+     `az extension add --name azure-devops` if missing), then a lightweight
+     auth check such as `az repos list --organization <ORG>` for the org
+     resolved below.
+   - `gitlab`: `glab auth status`
+
+   If not authenticated, stop the loop and tell the user which CLI needs
+   login — do not attempt to authenticate on their behalf.
+
+3. Parse `<ORG>`/`<PROJECT>`/`<REPO>` (or the provider's equivalent
+   identifiers) from the remote URL itself, per provider:
+   - `azuredevops`: `git@ssh.dev.azure.com:v3/{ORG}/{PROJECT}/{REPO}` (or
+     an `insteadOf`-aliased form of the same path) — `{ORG}`, `{PROJECT}`,
+     `{REPO}` are exactly those path segments, case-sensitive, do not
+     normalize them. Do **not** trust `az devops configure -l`'s saved
+     defaults — they can silently point at the wrong org. Always pass
+     `--organization` and `--project` explicitly on every `az repos` call.
+   - `github`: `{OWNER}/{REPO}` from `github.com/{OWNER}/{REPO}` (or the
+     SSH equivalent). `gh` infers this from the current directory's remote
+     automatically, so explicit `--repo {OWNER}/{REPO}` flags are optional
+     but harmless to include for clarity.
+   - `gitlab`: `{NAMESPACE}/{REPO}` (may include subgroups,
+     `{GROUP}/{SUBGROUP}/{REPO}`) from the remote URL. `glab` also infers
+     this from the current directory by default.
+
+4. Determine the default branch (`main` or `master`) via
    `git symbolic-ref refs/remotes/origin/HEAD` (or default to `main` if
    that's unset and `main` exists on the remote).
 
@@ -119,7 +153,20 @@ git commit -m "feat: implement task <task-id> - <short description>"
 git push -u origin task/<task-id>-<task-slug>
 ```
 
-Using the org/project/repo resolved in Step 0:
+Open the PR using the `<provider>` resolved in Step 0:
+
+**`github`:**
+```bash
+gh pr create \
+  --title "Task <task-id>: <short description>" \
+  --body "<task plan from Step 3, or a one-line summary for trivial tasks>" \
+  --base <default-branch> \
+  --head task/<task-id>-<task-slug>
+```
+Capture the printed PR URL (or re-run with `--json url,number` for a
+machine-readable form) as `<pr-ref>`.
+
+**`azuredevops`:**
 ```bash
 az repos pr create \
   --organization https://dev.azure.com/<ORG> \
@@ -131,31 +178,57 @@ az repos pr create \
   --description "<task plan from Step 3, or a one-line summary for trivial tasks>" \
   --output json
 ```
-Capture the returned `pullRequestId` as `<pr-id>`. `--project` is required
+Capture the returned `pullRequestId` as `<pr-ref>`. `--project` is required
 even though a default may be configured — passing `--organization`
 explicitly suppresses the default lookup, so always pass both.
 
-No reviewer is added to the PR — Step 6 below is the actual gate.
+**`gitlab`:**
+```bash
+glab mr create \
+  --title "Task <task-id>: <short description>" \
+  --description "<task plan from Step 3, or a one-line summary for trivial tasks>" \
+  --source-branch task/<task-id>-<task-slug> \
+  --target-branch <default-branch> \
+  --yes
+```
+Capture the printed MR URL/IID as `<pr-ref>`.
+
+No reviewer is added to the PR/MR — Step 6 below is the actual gate.
 
 ## Step 6 — Automated Review and Rework
 
 1. Run the `/code-review` skill against the diff on
-   `task/<task-id>-<task-slug>` (the PR's source branch).
+   `task/<task-id>-<task-slug>` (the PR's source branch). This step is
+   identical regardless of `<provider>` — it operates on the local git
+   diff, not the hosted PR.
 2. If `/code-review` reports no blocking findings: proceed to Step 7.
 3. If it reports findings: fix them, commit, `git push` (same branch — the
-   open PR updates automatically), and re-run `/code-review`. This is one
-   "rework round."
+   open PR/MR updates automatically on every provider), and re-run
+   `/code-review`. This is one "rework round."
 4. Track rework rounds for this task. After 3 rework rounds without a
    clean review: **stop the entire loop** (not just this task). Report the
-   task, the PR, and the latest `/code-review` findings to the user. Do
+   task, the PR/MR, and the latest `/code-review` findings to the user. Do
    not proceed to Step 7 and do not move to another task.
 
 ## Step 7 — Merge
 
+Merge using `<pr-ref>` and `<provider>` from Steps 0 and 5.
+
+**`github`:**
+```bash
+gh pr merge <pr-ref> --squash --delete-branch
+```
+(Use `--merge` instead of `--squash` if the repo's convention — check
+recent merge commits with `git log --merges -5` — favors merge commits
+over squashing.) `gh pr merge` is synchronous; a nonzero exit code or a
+"not mergeable" message means treat this like a rework-cap failure — stop
+the loop and report to the user, do not retry indefinitely.
+
+**`azuredevops`:**
 ```bash
 az repos pr update \
   --organization https://dev.azure.com/<ORG> \
-  --id <pr-id> \
+  --id <pr-ref> \
   --status completed \
   --delete-source-branch true \
   --merge-commit-message "Merge task <task-id>: <short description>"
@@ -169,22 +242,29 @@ done:
 ```bash
 for i in 1 2 3 4 5; do
   sleep 2
-  az repos pr show --organization https://dev.azure.com/<ORG> --id <pr-id> \
+  az repos pr show --organization https://dev.azure.com/<ORG> --id <pr-ref> \
     --query "{status:status, mergeStatus:mergeStatus}" -o json
 done
 ```
 Wait for `"status": "completed"` and `"mergeStatus": "succeeded"` before
 moving on. If it comes back `"mergeStatus": "failed"` or `"conflicts"`,
-treat this the same as a rework-cap failure: stop the loop and report to
-the user — do not retry merge indefinitely.
+stop the loop and report to the user — do not retry merge indefinitely.
 
+**`gitlab`:**
+```bash
+glab mr merge <pr-ref> --squash --remove-source-branch --yes
+```
+`glab mr merge` is synchronous; a nonzero exit code or a pipeline-blocked
+message means stop the loop and report to the user rather than retrying.
+
+Then, for every provider:
 ```bash
 git checkout <default-branch>
 git pull origin <default-branch>
 git branch -d task/<task-id>-<task-slug>
 ```
-(The remote branch is already gone — `--delete-source-branch true` handled
-that. This is local cleanup only.)
+(The remote branch is already gone — the merge command above handled
+deleting it on every provider. This is local cleanup only.)
 
 ## Step 8 — Repeat
 
@@ -196,10 +276,13 @@ the Stop Conditions below is hit.
 - **Success:** Step 1 finds no remaining undone, unskipped task anywhere
   under `docs/planning/`. Report completion to the user with a summary of
   every task processed this run and every task skipped via `skip=`.
+- **Unrecognized or unauthenticated VCS provider:** Step 0 can't match the
+  remote to a supported provider, or the matching CLI isn't authenticated.
+  Halt before Step 1 and ask the user how to proceed.
 - **Stuck task:** a task exceeds 3 rework rounds (Step 6) or its merge
   fails (Step 7). Halt the entire loop immediately — do not start another
-  task. Report the stuck task, its PR, and the relevant findings/error to
-  the user.
+  task. Report the stuck task, its PR/MR, and the relevant findings/error
+  to the user.
 - **Unsatisfiable acceptance criterion:** Step 4 finds a checkbox the loop
   cannot resolve autonomously. Halt the entire loop immediately. Report
   the task and the specific criterion to the user, and suggest re-running

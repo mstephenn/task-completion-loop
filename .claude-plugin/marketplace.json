@@ -5,7 +5,7 @@
     {
       "name": "task-completion-loop",
       "source": "./",
-      "description": "Unattended branch -> implement -> push -> PR -> automated review -> rework -> merge -> next-task loop over docs/planning/ task docs."
+      "description": "Unattended branch -> implement -> push -> PR -> automated review -> rework -> merge -> next-task loop over docs/planning/ task docs. Works with GitHub, Azure DevOps, or GitLab."
     }
   ]
 }
