@@ -373,7 +373,7 @@ and 4. **Create task(s)** is used by `/taskloop-plan`
 (`commands/taskloop-plan.md`) only — `/taskloop` itself never creates a
 task.
 
-### `docs` (default)
+### `docs` (fallback)
 
 No environment variables required. Operates entirely on the local
 checkout.

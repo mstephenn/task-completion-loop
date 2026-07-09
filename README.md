@@ -12,8 +12,9 @@ or doesn't cover what's needed yet.
 ## What it does
 
 1. Finds the next open task from the selected **task source** — this
-   repo's `docs/planning/phase-*/sprint-*/task-*.md` checkbox docs by
-   default, or Jira, Asana, Monday.com, or Linear via `source=`.
+   repo's `docs/planning/phase-*/sprint-*/task-*.md` checkbox docs as the
+   fallback (auto-detected on first run, or set explicitly), or Jira,
+   Asana, Monday.com, or Linear via `source=`.
 2. Branches, implements it, and records completion back in the task
    source (checkbox flip for `docs`; a status transition/close for the
    ticket trackers).
@@ -68,7 +69,8 @@ themselves.
 
 ## Requirements
 
-**Task source** (`source=`, default `docs`):
+**Task source** (`source=`, falls back to `docs` if omitted and nothing
+else is detected):
 - `docs` — a repo with `docs/planning/phase-*/sprint-*/task-*.md` task
   docs using `- [ ]` / `- [x]` acceptance-criteria checkboxes. No
   credentials needed.
