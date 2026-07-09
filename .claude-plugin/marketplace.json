@@ -1,0 +1,11 @@
+{
+  "name": "task-completion-loop-marketplace",
+  "owner": { "name": "Stephen M", "email": "stephen.m@optisolbusiness.com" },
+  "plugins": [
+    {
+      "name": "task-completion-loop",
+      "source": "./",
+      "description": "Unattended branch -> implement -> push -> PR -> automated review -> rework -> merge -> next-task loop over docs/planning/ task docs."
+    }
+  ]
+}

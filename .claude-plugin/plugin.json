@@ -1,0 +1,9 @@
+{
+  "name": "task-completion-loop",
+  "description": "Unattended branch -> implement -> push -> PR -> automated review -> rework -> merge -> next-task loop over docs/planning/ task docs, gated by /code-review.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Stephen M",
+    "email": "stephen.m@optisolbusiness.com"
+  }
+}
