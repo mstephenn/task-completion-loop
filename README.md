@@ -1,5 +1,8 @@
 # task-completion-loop
 
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-5A32FB)](https://github.com/mstephenn/task-completion-loop)
+[![automation](https://img.shields.io/badge/automation-ci--cd-blue)](https://github.com/mstephenn/task-completion-loop)
+
 A Claude Code plugin providing `/task-completion-loop`: an unattended
 branch -> implement -> push -> PR -> automated review -> rework -> merge ->
 next-task loop, pluggable across VCS hosts and task trackers.
@@ -43,7 +46,7 @@ themselves.
 ## Install
 
 ```
-/plugin marketplace add <this-repo-url>
+/plugin marketplace add mstephenn/task-completion-loop
 /plugin install task-completion-loop@task-completion-loop-marketplace
 ```
 
