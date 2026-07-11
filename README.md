@@ -1,12 +1,13 @@
 # taskloop
 
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-5A32FB)](https://github.com/mstephenn/taskloop)
+[![Codex](https://img.shields.io/badge/Codex-plugin-2563EB)](https://github.com/mstephenn/taskloop)
 [![automation](https://img.shields.io/badge/automation-ci--cd-blue)](https://github.com/mstephenn/taskloop)
 
-A Claude Code plugin providing `/taskloop`: an unattended
+A Claude Code and Codex plugin providing taskloop automation: an unattended
 branch -> implement -> push -> PR -> automated review -> rework -> merge ->
 next-task loop, pluggable across VCS hosts and task trackers. Also
-provides `/taskloop-plan`, for generating tasks when the backlog is empty
+provides taskloop planning, for generating tasks when the backlog is empty
 or doesn't cover what's needed yet.
 
 ## What it does
@@ -41,19 +42,29 @@ making you re-pass `skip=` for it on every future run. Bring one back into
 scope deliberately with `unblock=<task-id>`.
 
 See `commands/taskloop.md` for the exact step-by-step contract
-the command follows — the numbered steps are the fixed control flow;
+the workflow follows — the numbered steps are the fixed control flow;
 Appendix A (VCS adapters) and Appendix B (task-source adapters) hold the
 per-provider command sets so switching providers never changes the steps
 themselves.
 
 ## Install
 
+Claude Code:
+
 ```
 /plugin marketplace add mstephenn/taskloop
 /plugin install taskloop@taskloop-marketplace
 ```
 
+Codex:
+
+This repository also includes a Codex plugin manifest at
+`.codex-plugin/plugin.json` and Codex skills under `skills/`. Install it
+through your Codex plugin marketplace or local plugin flow for this repo.
+
 ## Usage
+
+Claude Code slash commands:
 
 ```
 /taskloop
@@ -65,6 +76,14 @@ themselves.
 /taskloop-plan "add dark mode support"
 /taskloop-plan docs/specs/dark-mode.md
 /taskloop-plan "add dark mode support" source=linear
+```
+
+Codex prompts:
+
+```
+Run taskloop.
+Run taskloop skip=0.1.3 source=linear.
+Run taskloop-plan for docs/specs/dark-mode.md.
 ```
 
 ## Requirements
@@ -94,9 +113,11 @@ An unresolvable VCS host, missing CLI/token, or missing task-source
 credential halts the loop before it starts, rather than guessing or
 partially running.
 
-Also required: a `/code-review` skill or slash command available in the
-session (this plugin does not ship one — it assumes the target repo or
-another installed plugin provides it).
+Also required: an automated code-review capability available in the session.
+In Claude Code this is expected as a `/code-review` skill or slash command.
+In Codex, the `taskloop` skill uses the best available Codex review
+capability; if none is available, it stops before merging and reports that
+the review gate is unavailable.
 
 ## Guardrails
 

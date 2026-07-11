@@ -41,8 +41,8 @@ Parse `"$ARGUMENTS"` before Step 1.
 Resolve `<source>` per Appendix C of `commands/taskloop.md` (reads
 `source=` from `$ARGUMENTS` first; if omitted, checks
 `.taskloop/config.json`, then whether `docs/planning/` is already
-established, then scans README/AGENTS.md/CLAUDE.md, asking only if none
-of those resolve it). Appendix C also validates required env vars for
+established, then scans README/AGENTS.md/CLAUDE.md/CODEX.md, asking only
+if none of those resolve it). Appendix C also validates required env vars for
 non-`docs` sources and persists the resolution to `.taskloop/config.json`
 so a choice made here is remembered by `/taskloop` too. If a required
 variable is missing: **stop** and report exactly which variable is

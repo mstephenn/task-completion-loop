@@ -46,7 +46,8 @@ Parse `"$ARGUMENTS"` before Step 0. All are optional and can combine, e.g.
 - `source=<docs|jira|asana|monday|linear>` — which task source adapter to
   use. If omitted, resolved automatically per Appendix C (persisted
   choice, then an already-established `docs/planning/` tree, then a
-  README/AGENTS.md/CLAUDE.md scan, asking only if none of those apply) —
+  README/AGENTS.md/CLAUDE.md/CODEX.md scan, asking only if none of those
+  apply) —
   falls back to `docs` (this repo's `docs/planning/` tree) if nothing else
   resolves it. Non-`docs` sources also require the environment variables
   listed for that adapter in Appendix B — if they're missing, this is a
@@ -119,8 +120,8 @@ re-detect per task.
 2. **Task source adapter.** Resolve `<source>` per Appendix C (reads
    `source=` from `$ARGUMENTS` first; if omitted, checks
    `.taskloop/config.json`, then whether `docs/planning/` is already
-   established, then scans README/AGENTS.md/CLAUDE.md, asking only if
-   none of those resolve it). Appendix C also validates required env vars
+   established, then scans README/AGENTS.md/CLAUDE.md/CODEX.md, asking
+   only if none of those resolve it). Appendix C also validates required env vars
    for non-`docs` sources and persists the resolution. If a required
    variable is missing: **stop the loop** before Step 1 and report exactly
    which variable is missing.
@@ -471,7 +472,7 @@ Resolve `<source>` in this order, stopping at the first rule that applies:
 
    If any is true: `<source> = docs`. No question asked.
 3. **First-run detection.** If neither 1 nor 2 applies, grep root-level
-   `README.md`, `AGENTS.md`, and `CLAUDE.md` — whichever exist —
+   `README.md`, `AGENTS.md`, `CLAUDE.md`, and `CODEX.md` — whichever exist —
    case-insensitively for the literal names `Jira`, `Asana`,
    `Monday\.com` (also match bare `Monday`), and `Linear`. Track which
    file(s) each match came from.

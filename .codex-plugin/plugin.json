@@ -1,0 +1,29 @@
+{
+  "name": "taskloop",
+  "version": "0.6.0",
+  "description": "Unattended task completion loop with VCS and task-source adapters, plus backlog task planning.",
+  "author": {
+    "name": "Stephen M",
+    "email": "stephrajm@gmail.com",
+    "url": "https://github.com/mstephenn"
+  },
+  "homepage": "https://github.com/mstephenn/taskloop",
+  "repository": "https://github.com/mstephenn/taskloop",
+  "keywords": ["automation", "task-loop", "pull-requests", "backlog"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Task Loop",
+    "shortDescription": "Run task backlog items through branch, PR, review, merge, and repeat.",
+    "longDescription": "Task Loop gives Codex skills for an unattended branch -> implement -> push -> PR -> automated review -> rework -> merge -> next-task workflow, plus a planning skill that turns goals or specs into backlog tasks. It supports docs/planning, Jira, Asana, Monday.com, and Linear task sources, and GitHub, Azure DevOps, and GitLab VCS hosts.",
+    "developerName": "Stephen M",
+    "category": "Productivity",
+    "capabilities": ["Write", "Interactive"],
+    "websiteURL": "https://github.com/mstephenn/taskloop",
+    "defaultPrompt": [
+      "Run taskloop on this repo.",
+      "Plan taskloop items for this spec.",
+      "Use taskloop with source=linear."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
